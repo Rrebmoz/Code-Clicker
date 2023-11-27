@@ -26,7 +26,7 @@ public class Clicker extends Game {
 	private float timer = 0;
 	private float boostedIdle = 2;
 
-	private final Rectangle clickButtonBounds = new Rectangle(Gdx.graphics.getWidth() / 6, Gdx.graphics.getHeight() / 3, Gdx.graphics.getWidth() / 4, Gdx.graphics.getHeight() / 3);
+	private Rectangle clickButtonBounds;
 	private Color clickButtonColor;
 	private boolean clickButtonPressed;
 
@@ -39,7 +39,8 @@ public class Clicker extends Game {
 		batch = new SpriteBatch();
 		shapeRenderer = new ShapeRenderer();
 
-        clickButtonColor = Color.BLUE;
+		clickButtonBounds = new Rectangle((float) Gdx.graphics.getWidth() / 6, (float) Gdx.graphics.getHeight() / 3, (float) Gdx.graphics.getWidth() / 4, (float) Gdx.graphics.getHeight() / 3);
+		clickButtonColor = Color.BLUE;
 		clickButtonPressed = false;
 
 		font = new BitmapFont();
@@ -58,10 +59,10 @@ public class Clicker extends Game {
 		upgradeButtonPressed = new ArrayList<>();
 
 		float initialY = Gdx.graphics.getHeight() / 1.18f;
-		float buttonHeight = Gdx.graphics.getHeight() / 8;
+		float buttonHeight = (float) Gdx.graphics.getHeight() / 10;
 
 		for (int i = 0; i < NUM_UPGRADE_BUTTONS; i++) {
-			Rectangle button = new Rectangle(Gdx.graphics.getWidth() * 4.7f / 6, initialY - i * 198, Gdx.graphics.getWidth() / 5, buttonHeight);
+			Rectangle button = new Rectangle(Gdx.graphics.getWidth() * 4.7f / 6, initialY - i * 125, (float) Gdx.graphics.getWidth() / 5, buttonHeight);
 			upgradeButtonBounds.add(button);
 			upgradeButtonColors.add(Color.GREEN);
 			upgradeButtonPressed.add(false);
@@ -88,7 +89,9 @@ public class Clicker extends Game {
 		shapeRenderer.end();
 
 		batch.begin();
+
 		font.draw(batch, "Points: " + amountOfPoints, 10, Gdx.graphics.getHeight() - 20);
+		font.draw(batch, "Idle points: " + boostedIdle + "/s", 10, Gdx.graphics.getHeight() - 80);
 		batch.end();
 	}
 
