@@ -1,69 +1,154 @@
 package com.mygdx.game;
 
+import java.util.ArrayList;
+import java.util.List;
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.Gdx;
-import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.Preferences;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
-import com.badlogic.gdx.InputAdapter;
-import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Rectangle;
 
 public class Clicker extends Game {
-	SpriteBatch batch;
-	Texture img;
-	BitmapFont font;
-	double totalClicks = 0;
-	boolean isButtonClicked = false;
+	// Constants
+	private static final int NUM_UPGRADE_BUTTONS = 7;
+	private static final Color UPGRADE_COLOR = Color.FOREST;
+	private static final int[] UPGRADE_PRICES = {100, 1000, 10000, 100000, 1000000, 10000000, 100000000};
+	private static final float BOOST_MULTIPLIER = 2.0f;
+
+	private SpriteBatch batch;
+	private ShapeRenderer shapeRenderer;
+	private BitmapFont font;
+	private float amountOfPoints = 0;
+	private float timer = 0;
+	private float boostedIdle = 2;
+
+	private final Rectangle clickButtonBounds = new Rectangle(Gdx.graphics.getWidth() / 6, Gdx.graphics.getHeight() / 3, Gdx.graphics.getWidth() / 4, Gdx.graphics.getHeight() / 3);
+	private Color clickButtonColor;
+	private boolean clickButtonPressed;
+
+	private List<Rectangle> upgradeButtonBounds;
+	private List<Color> upgradeButtonColors;
+	private List<Boolean> upgradeButtonPressed;
 
 	@Override
 	public void create() {
 		batch = new SpriteBatch();
-		img = new Texture("square.png");
+		shapeRenderer = new ShapeRenderer();
+
+        clickButtonColor = Color.BLUE;
+		clickButtonPressed = false;
 
 		font = new BitmapFont();
 		font.getData().setScale(4);
+		font.setColor(Color.BLACK);
 
-		Gdx.input.setInputProcessor(new InputAdapter() {
-			@Override
-			public boolean touchDown(int screenX, int screenY, int pointer, int button) {
-				float squareX = (float) (Gdx.graphics.getWidth() - img.getWidth()) / 6;
-				float squareY = (float) (Gdx.graphics.getHeight() - img.getHeight()) / 2;
+		Preferences prefs = Gdx.app.getPreferences("MyGamePreferences");
+		amountOfPoints = prefs.getFloat("points", amountOfPoints);
 
-				if (screenX >= squareX && screenX <= squareX + img.getWidth()
-						&& screenY >= squareY && screenY <= squareY + img.getHeight()) {
-					isButtonClicked = true;
-					totalClicks++;
-				}
-				return true;
-			}
-		});
+		initializeUpgradeButtons();
+	}
+
+	private void initializeUpgradeButtons() {
+		upgradeButtonBounds = new ArrayList<>();
+		upgradeButtonColors = new ArrayList<>();
+		upgradeButtonPressed = new ArrayList<>();
+
+		float initialY = Gdx.graphics.getHeight() / 1.18f;
+		float buttonHeight = Gdx.graphics.getHeight() / 8;
+
+		for (int i = 0; i < NUM_UPGRADE_BUTTONS; i++) {
+			Rectangle button = new Rectangle(Gdx.graphics.getWidth() * 4.7f / 6, initialY - i * 198, Gdx.graphics.getWidth() / 5, buttonHeight);
+			upgradeButtonBounds.add(button);
+			upgradeButtonColors.add(Color.GREEN);
+			upgradeButtonPressed.add(false);
+		}
 	}
 
 	@Override
 	public void render() {
-		ScreenUtils.clear(1, 0, 0, 1);
-		batch.begin();
+		handleInput();
+		update(Gdx.graphics.getDeltaTime());
 
-		float screenWidth = Gdx.graphics.getWidth();
-		float screenHeight = Gdx.graphics.getHeight();
-		float squareWidth = img.getWidth();
-		float squareHeight = img.getHeight();
-		float x = (screenWidth - squareWidth) / 6;
-		float y = (screenHeight - squareHeight) / 2;
+		Gdx.gl.glClearColor(1, 1, 1, 1);
+		Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-		// Draw the text "Total Clicks:"
-		font.draw(batch, "Points: " + totalClicks, x + 50, y + squareHeight + 30); // Adjust text position
+		shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+		shapeRenderer.setColor(clickButtonColor);
+		shapeRenderer.rect(clickButtonBounds.x, clickButtonBounds.y, clickButtonBounds.width, clickButtonBounds.height);
 
-		// Change square color when clicked
-		if (isButtonClicked) {
-			batch.setColor(0.5f, 0.5f, 0.5f, 1f); // Change to gray when clicked
+		for (int i = 0; i < NUM_UPGRADE_BUTTONS; i++) {
+			shapeRenderer.setColor(upgradeButtonColors.get(i));
+			shapeRenderer.rect(upgradeButtonBounds.get(i).x, upgradeButtonBounds.get(i).y, upgradeButtonBounds.get(i).width, upgradeButtonBounds.get(i).height);
 		}
 
-		// Draw the square at the calculated center position
-		batch.draw(img, x, y);
-		batch.setColor(1, 1, 1, 1); // Reset color
+		shapeRenderer.end();
 
+		batch.begin();
+		font.draw(batch, "Points: " + amountOfPoints, 10, Gdx.graphics.getHeight() - 20);
 		batch.end();
-		isButtonClicked = false; // Reset button click state for next frame
+	}
+
+	private void handleInput() {
+		if (Gdx.input.justTouched()) {
+			float touchX = Gdx.input.getX();
+			float touchY = Gdx.graphics.getHeight() - Gdx.input.getY();
+
+			if (clickButtonBounds.contains(touchX, touchY)) {
+				clickButtonPressed = true;
+			} else {
+				for (int i = 0; i < NUM_UPGRADE_BUTTONS; i++) {
+					if (upgradeButtonBounds.get(i).contains(touchX, touchY)) {
+						upgradeButtonPressed.set(i, true);
+						break;
+					}
+				}
+			}
+		}
+	}
+
+	private void update(float delta) {
+		timer += delta * boostedIdle;
+
+		if (timer >= 1.0f) {
+			amountOfPoints++;
+			timer -= 1.0f;
+			save();
+		}
+
+		if (clickButtonPressed) {
+			clickButtonColor = Color.SKY;
+			amountOfPoints++;
+			clickButtonPressed = false;
+			save();
+		} else {
+			clickButtonColor = Color.BLUE;
+		}
+
+		for (int i = 0; i < NUM_UPGRADE_BUTTONS; i++) {
+			if (upgradeButtonPressed.get(i) && upgradeButtonColors.get(i) != UPGRADE_COLOR && amountOfPoints >= UPGRADE_PRICES[i]) {
+				upgradeButtonColors.set(i, UPGRADE_COLOR);
+				amountOfPoints -= UPGRADE_PRICES[i];
+				boostedIdle *= BOOST_MULTIPLIER;
+				upgradeButtonPressed.set(i, false);
+				break;
+			}
+		}
+	}
+
+	public void save() {
+		Preferences prefs = Gdx.app.getPreferences("MyGamePreferences");
+		prefs.putFloat("points", amountOfPoints);
+		prefs.flush();
+	}
+
+	@Override
+	public void dispose() {
+		batch.dispose();
+		shapeRenderer.dispose();
+		font.dispose();
 	}
 }
