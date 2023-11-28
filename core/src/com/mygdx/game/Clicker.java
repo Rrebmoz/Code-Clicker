@@ -17,6 +17,7 @@ public class Clicker extends Game {
 	private SpriteBatch batch;
 	private ShapeRenderer shapeRenderer;
 	private BitmapFont font;
+	// Scores
 	private float amountOfPoints = 0;
 	private float timer = 0;
 	private float boostedIdle = 1;
@@ -33,8 +34,9 @@ public class Clicker extends Game {
 	// upgrade Buttons variables
 	final int NUM_UPGRADE_BUTTONS = 7;
 	final Color UPGRADE_COLOR = Color.FOREST;
-	final int[] UPGRADE_PRICES = { 100, 1000, 10000, 100000, 1000000, 10000000, 100000000 };
-	final float IDLE_MULTIPLIER = 2.0f;
+	final int[] UPGRADE_PRICES = { 100, 200, 400, 800, 1600, 3200, 6400 };
+	final int IDLE_MULTIPLIER = 2;
+	float clickValue = 1.0f;
 	private List<Rectangle> upgradeButtonBounds;
 	private List<Color> upgradeButtonColors;
 	private List<Boolean> upgradeButtonPressed;
@@ -46,7 +48,7 @@ public class Clicker extends Game {
 
 		// Initialize click button.
 		clickButtonBounds = new Rectangle((float) Gdx.graphics.getWidth() / 6, (float) Gdx.graphics.getHeight() / 3,(float) Gdx.graphics.getWidth() / 4, (float) Gdx.graphics.getHeight() / 3);
-		clickButtonColor = Color.BLUE;
+		clickButtonColor = Color.LIGHT_GRAY;
 		clickButtonPressed = false;
 		// Initialize reset button.
 		resetButtonBounds = new Rectangle((float) Gdx.graphics.getWidth() / 2 - (float) Gdx.graphics.getWidth() / 20,
@@ -57,13 +59,15 @@ public class Clicker extends Game {
 		resetButtonColor = Color.FIREBRICK;
 
 		font = new BitmapFont();
-		font.getData().setScale(4);
+		float scale = (float) Gdx.graphics.getHeight() / 270;
+		font.getData().setScale(scale);
 		font.setColor(Color.BLACK);
 
-		// Load saved preferences or default values
+		// Load saved preferences (local storage) or default values
 		Preferences prefs = Gdx.app.getPreferences("MyGamePreferences");
 		amountOfPoints = prefs.getFloat("points", amountOfPoints);
 		boostedIdle = prefs.getFloat("boostedIdle", boostedIdle);
+		clickValue = prefs.getFloat("clickValue", clickValue);
 
 		// Initialize upgrade buttons
 		initializeUpgradeButtons(prefs);
@@ -75,25 +79,36 @@ public class Clicker extends Game {
 		upgradeButtonColors = new ArrayList<>();
 		upgradeButtonPressed = new ArrayList<>();
 
-		float initialY = Gdx.graphics.getHeight() / 1.18f;
-		float buttonHeight = (float) Gdx.graphics.getHeight() / 10;
+		// Define ratios or percentages for button positioning and sizing
+		float initialYRatio = 1.18f; // Percentage of screen height for initial Y position
+		float buttonHeightRatio = 0.1f;
+		float buttonWidthRatio = 0.2f;
+		float verticalSpacingRatio = 0.12f;
 
 		for (int i = 0; i < NUM_UPGRADE_BUTTONS; i++) {
-			Rectangle button = new Rectangle(Gdx.graphics.getWidth() * 4.7f / 6, initialY - i * 125,
-					(float) Gdx.graphics.getWidth() / 5, buttonHeight);
+			float initialY = Gdx.graphics.getHeight() / initialYRatio;
+			float buttonHeight = Gdx.graphics.getHeight() * buttonHeightRatio;
+			float buttonWidth = Gdx.graphics.getWidth() * buttonWidthRatio;
+			float verticalSpacing = Gdx.graphics.getHeight() * verticalSpacingRatio;
+
+			Rectangle button = new Rectangle(
+					Gdx.graphics.getWidth() * 4.7f / 6,
+					initialY - i * verticalSpacing,
+					buttonWidth,
+					buttonHeight
+			);
 			upgradeButtonBounds.add(button);
 
-			// Set button color based on whether it was clicked before
 			boolean isButtonClicked = prefs.getBoolean("upgradeButton_" + i, false);
 			if (isButtonClicked) {
 				upgradeButtonColors.add(UPGRADE_COLOR);
 			} else {
-				upgradeButtonColors.add(Color.GREEN);
+				upgradeButtonColors.add(Color.LIGHT_GRAY);
 			}
-
 			upgradeButtonPressed.add(false);
 		}
 	}
+
 
 	@Override
 	public void render() {
@@ -119,12 +134,27 @@ public class Clicker extends Game {
 		shapeRenderer.end();
 
 		// Render text
+		float heightChanger = (float) Gdx.graphics.getHeight() / 54f;
 		batch.begin();
-		font.draw(batch, "Points: " + amountOfPoints, 10, Gdx.graphics.getHeight() - 20);
-		font.draw(batch, "Idle points: " + boostedIdle + "/s", 10, Gdx.graphics.getHeight() - 80);
+		font.draw(batch, "Points: " + amountOfPoints, 10, Gdx.graphics.getHeight() - heightChanger);
+		font.draw(batch, "Idle points: " + boostedIdle + "/s", 10, Gdx.graphics.getHeight() - heightChanger * 4);
+		font.draw(batch, "Click value: " + clickValue + "/click", 10, Gdx.graphics.getHeight() - heightChanger * 7);
 		font.draw(batch, "RESET", resetButtonBounds.x + 10, resetButtonBounds.y + resetButtonBounds.height - 10);
 		for (int i = 0; i < NUM_UPGRADE_BUTTONS; i++) {
-			font.draw(batch, "Cost: " + UPGRADE_PRICES[i], upgradeButtonBounds.get(i).x + 10, upgradeButtonBounds.get(i).y + upgradeButtonBounds.get(i).height - 10);
+			if (upgradeButtonColors.get(i) == UPGRADE_COLOR) {
+				// Button already bought, show "Bought!" text
+				font.draw(batch, "Bought!", upgradeButtonBounds.get(i).x + 10, upgradeButtonBounds.get(i).y + upgradeButtonBounds.get(i).height - 10);
+			} else {
+				if (amountOfPoints >= UPGRADE_PRICES[i]) {
+					// Able to buy the button, change color to green
+					upgradeButtonColors.set(i, Color.GREEN);
+					font.draw(batch, "Cost: " + UPGRADE_PRICES[i], upgradeButtonBounds.get(i).x + 10, upgradeButtonBounds.get(i).y + upgradeButtonBounds.get(i).height - 10);
+				} else {
+					// Not enough points to buy, keep the original color
+					upgradeButtonColors.set(i, Color.LIGHT_GRAY);
+					font.draw(batch, "Cost: " + UPGRADE_PRICES[i], upgradeButtonBounds.get(i).x + 10, upgradeButtonBounds.get(i).y + upgradeButtonBounds.get(i).height - 10);
+				}
+			}
 		}
 		batch.end();
 	}
@@ -144,8 +174,16 @@ public class Clicker extends Game {
 			} else {
 				for (int i = 0; i < NUM_UPGRADE_BUTTONS; i++) {
 					if (upgradeButtonBounds.get(i).contains(touchX, touchY)) {
-						upgradeButtonPressed.set(i, true);
-						saveUpgradeButtonClickState(i);
+						// Check if there are enough points to buy the upgrade
+						if (amountOfPoints >= UPGRADE_PRICES[i] && upgradeButtonColors.get(i) != UPGRADE_COLOR) {
+							upgradeButtonPressed.set(i, true);
+							upgradeButtonColors.set(i, UPGRADE_COLOR);
+							amountOfPoints -= UPGRADE_PRICES[i];
+							boostedIdle *= IDLE_MULTIPLIER;
+							clickValue *= 2.0f;
+							save();
+							saveUpgradeButtonClickState(i); // Save only when enough points
+						}
 						break;
 					}
 				}
@@ -162,10 +200,11 @@ public class Clicker extends Game {
 		// Reset variables to initial values.
 		amountOfPoints = 0;
 		boostedIdle = 1;
+		clickValue = 1.0f;
 
 		// Reset upgrade button colors and states
 		for (int i = 0; i < NUM_UPGRADE_BUTTONS; i++) {
-			upgradeButtonColors.set(i, Color.GREEN);
+			upgradeButtonColors.set(i, Color.LIGHT_GRAY);
 			upgradeButtonPressed.set(i, false);
 		}
 		save();
@@ -174,23 +213,23 @@ public class Clicker extends Game {
 	// Update game logic
 	private void update(float delta) {
 		// Makes the timer go up faster.
-		timer += delta * boostedIdle;
+		timer += delta;
 
 		// Timer reset
 		if (timer >= 1.0f) {
-			amountOfPoints++;
+			amountOfPoints += 1 * boostedIdle;
 			timer -= 1.0f;
 			save();
 		}
 
 		// Visual feedback for blue clicking button (Usability Engineering coming in clutch)
 		if (clickButtonPressed) {
-			clickButtonColor = Color.SKY;
-			amountOfPoints++;
+			clickButtonColor = Color.BLACK;
+			amountOfPoints += clickValue;
 			clickButtonPressed = false;
 			save();
 		} else {
-			clickButtonColor = Color.BLUE;
+			clickButtonColor = Color.BROWN;
 		}
 
 		// Check for upgrade button clicks and apply upgrades if affordable
@@ -200,10 +239,10 @@ public class Clicker extends Game {
 				upgradeButtonColors.set(i, UPGRADE_COLOR);
 				amountOfPoints -= UPGRADE_PRICES[i];
 				boostedIdle *= IDLE_MULTIPLIER;
-				upgradeButtonPressed.set(i, false);
 				save();
 				break;
 			}
+			upgradeButtonPressed.set(i, false);
 		}
 	}
 
@@ -212,10 +251,11 @@ public class Clicker extends Game {
 		Preferences prefs = Gdx.app.getPreferences("MyGamePreferences");
 		prefs.putFloat("points", amountOfPoints);
 		prefs.putFloat("boostedIdle", boostedIdle);
+		prefs.putFloat("clickValue", clickValue);
 		prefs.flush();
 	}
 
-	// Save upgrade button to localstorage.
+	// Dynamically save upgrade button to localstorage.
 	private void saveUpgradeButtonClickState(int buttonIndex) {
 		Preferences prefs = Gdx.app.getPreferences("MyGamePreferences");
 		prefs.putBoolean("upgradeButton_" + buttonIndex, true);
