@@ -5,4 +5,6 @@ simple education clicker/idle game where you can slowly learn the basics of codi
 
 Developed using the Java framework libGDX.
 
-The app uses local storage which means that there's no intetnet connection required
+The app uses local storage which means that there's no intetnet connection required.
+
+https://libgdx.com/wiki/start/simple-game-extended
