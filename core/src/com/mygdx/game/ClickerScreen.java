@@ -1,4 +1,3 @@
-//https://libgdx.com/wiki/start/simple-game-extended
 package com.mygdx.game;
 
 import java.util.ArrayList;
