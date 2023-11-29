@@ -109,7 +109,6 @@ public class Clicker extends Game {
 		}
 	}
 
-
 	@Override
 	public void render() {
 		handleClick();
@@ -181,8 +180,8 @@ public class Clicker extends Game {
 							amountOfPoints -= UPGRADE_PRICES[i];
 							boostedIdle *= IDLE_MULTIPLIER;
 							clickValue *= 2.0f;
-							save();
-							saveUpgradeButtonClickState(i); // Save only when enough points
+							GameState.save(amountOfPoints, boostedIdle, clickValue);
+							GameState.save(i); // Save only when enough points
 						}
 						break;
 					}
@@ -207,7 +206,7 @@ public class Clicker extends Game {
 			upgradeButtonColors.set(i, Color.LIGHT_GRAY);
 			upgradeButtonPressed.set(i, false);
 		}
-		save();
+		GameState.save(amountOfPoints, boostedIdle, clickValue);
 	}
 
 	// Update game logic
@@ -219,15 +218,15 @@ public class Clicker extends Game {
 		if (timer >= 1.0f) {
 			amountOfPoints += 1 * boostedIdle;
 			timer -= 1.0f;
-			save();
+			GameState.save(amountOfPoints, boostedIdle, clickValue);
 		}
 
-		// Visual feedback for blue clicking button (Usability Engineering coming in clutch)
+		// Visual feedback for clicking button
 		if (clickButtonPressed) {
 			clickButtonColor = Color.BLACK;
 			amountOfPoints += clickValue;
 			clickButtonPressed = false;
-			save();
+			GameState.save(amountOfPoints, boostedIdle, clickValue);
 		} else {
 			clickButtonColor = Color.BROWN;
 		}
@@ -239,26 +238,10 @@ public class Clicker extends Game {
 				upgradeButtonColors.set(i, UPGRADE_COLOR);
 				amountOfPoints -= UPGRADE_PRICES[i];
 				boostedIdle *= IDLE_MULTIPLIER;
-				save();
+				GameState.save(amountOfPoints, boostedIdle, clickValue);
 				break;
 			}
 			upgradeButtonPressed.set(i, false);
 		}
-	}
-
-	// Saves the game to local storage.
-	public void save() {
-		Preferences prefs = Gdx.app.getPreferences("MyGamePreferences");
-		prefs.putFloat("points", amountOfPoints);
-		prefs.putFloat("boostedIdle", boostedIdle);
-		prefs.putFloat("clickValue", clickValue);
-		prefs.flush();
-	}
-
-	// Dynamically save upgrade button to localstorage.
-	private void saveUpgradeButtonClickState(int buttonIndex) {
-		Preferences prefs = Gdx.app.getPreferences("MyGamePreferences");
-		prefs.putBoolean("upgradeButton_" + buttonIndex, true);
-		prefs.flush();
 	}
 }
