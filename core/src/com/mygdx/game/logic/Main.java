@@ -1,10 +1,11 @@
-package com.mygdx.game;
+package com.mygdx.game.logic;
 
 import com.badlogic.gdx.Game;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.mygdx.game.screens.ClickerScreen;
 
 public class Main extends Game {
     public SpriteBatch batch;

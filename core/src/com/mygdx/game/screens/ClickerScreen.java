@@ -1,4 +1,4 @@
-package com.mygdx.game;
+package com.mygdx.game.screens;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -14,10 +14,18 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.input.GestureDetector;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
-import com.mygdx.game.chapters.*;
+import com.badlogic.gdx.utils.Align;
+import com.mygdx.game.screens.chapters.*;
+import com.mygdx.game.logic.GameState;
+import com.mygdx.game.logic.Main;
 
 public class ClickerScreen implements Screen, GestureDetector.GestureListener {
     Main game;
+
+    // Achievement unlocked message:
+    boolean achievementUnlocked = false;
+    float achievementTimer = 0;
+    String achievementMessage = "";
 
     // Scaling camera
     OrthographicCamera camera = new OrthographicCamera();
@@ -42,7 +50,7 @@ public class ClickerScreen implements Screen, GestureDetector.GestureListener {
     // Upgrade buttons variables
     final int NUM_UPGRADE_BUTTONS = 7;
     final Color UPGRADE_COLOR = Color.FOREST;
-    final int[] UPGRADE_PRICES = { 5, 120, 288, 700, 1680, 4032, 10000 };
+    final int[] UPGRADE_PRICES = { 5, 150, 400, 1000, 2500, 6000, 15000 };
     final int IDLE_MULTIPLIER = 2;
     float clickValue = 0.025f;
     List<Rectangle> upgradeButtonBounds;
@@ -55,12 +63,16 @@ public class ClickerScreen implements Screen, GestureDetector.GestureListener {
 
     public ClickerScreen(Main game) {
         this.game = game;
+
         camera.setToOrtho(false, 800, 480);
         Preferences prefs = Gdx.app.getPreferences("MyGamePreferences");
+
         amountOfPoints = prefs.getFloat("points", amountOfPoints);
         boostedIdle = prefs.getFloat("boostedIdle", boostedIdle);
         clickValue = prefs.getFloat("clickValue", clickValue);
+
         initializeUpgradeButtons(prefs);
+
         // Check for swiping
         GestureDetector gestureDetector = new GestureDetector(this);
         Gdx.input.setInputProcessor(gestureDetector);
@@ -96,10 +108,11 @@ public class ClickerScreen implements Screen, GestureDetector.GestureListener {
         // Render text
         float heightChanger = (float) Gdx.graphics.getHeight() / 54f;
         game.font.getData().setScale((float) Gdx.graphics.getHeight() / 235);
+        game.font.setColor(Color.BLACK);
         game.batch.begin();
         game.font.draw(game.batch, "Points: " + String.format(Locale.US, "%.3f", amountOfPoints), 10, Gdx.graphics.getHeight() - heightChanger);
-        game.font.draw(game.batch, "Idle points: " + boostedIdle + "/s", 10, Gdx.graphics.getHeight() - heightChanger * 5);
-        game.font.draw(game.batch, "Click value: " + clickValue + "/click", 10, Gdx.graphics.getHeight() - heightChanger * 9);
+        game.font.draw(game.batch, "Idle points: " + String.format(Locale.US, "%.3f", boostedIdle) + "/s", 10, Gdx.graphics.getHeight() - heightChanger * 5);
+        game.font.draw(game.batch, "Click value: " + String.format(Locale.US, "%.3f", clickValue) + "/click", 10, Gdx.graphics.getHeight() - heightChanger * 9);
         game.font.draw(game.batch, "ACH", (float) Gdx.graphics.getWidth() / 21, Gdx.graphics.getHeight() / 1.85f);
         game.font.draw(game.batch, "RESET", resetButtonBounds.x + (float) Gdx.graphics.getWidth() / 128, resetButtonBounds.y + resetButtonBounds.height - 10);
         for (int i = 0; i < NUM_UPGRADE_BUTTONS; i++) {
@@ -118,6 +131,7 @@ public class ClickerScreen implements Screen, GestureDetector.GestureListener {
             }
         }
         game.batch.end();
+        renderAchievementPopUp();
     }
 
     @Override
@@ -147,18 +161,7 @@ public class ClickerScreen implements Screen, GestureDetector.GestureListener {
 
     @Override
     public void dispose() {
-        // Dispose textures, fonts, and other resources loaded in the Clicker class
-        game.dispose();
 
-        // Dispose the ShapeRenderer and Batch used in this screen
-        game.shapeRenderer.dispose();
-        game.batch.dispose();
-
-        // Dispose any other resources specific to this screen
-        // Clear lists and objects to release memory
-        upgradeButtonBounds.clear();
-        upgradeButtonColors.clear();
-        upgradeButtonPressed.clear();
     }
 
 
@@ -274,7 +277,7 @@ public class ClickerScreen implements Screen, GestureDetector.GestureListener {
 
         // Timer reset
         if (timer >= 1.0f) {
-            amountOfPoints += 1 * boostedIdle;
+            amountOfPoints += boostedIdle;
             timer -= 1.0f;
             GameState.save(amountOfPoints, boostedIdle, clickValue);
         }
@@ -301,7 +304,57 @@ public class ClickerScreen implements Screen, GestureDetector.GestureListener {
             }
             upgradeButtonPressed.set(i, false);
         }
+        for (int i = 0; i < UPGRADE_PRICES.length; i++) {
+            checkAchievement(UPGRADE_PRICES[i], i + 1);
+        }
     }
+
+    // Checks for achievement criteria
+    private void checkAchievement(int targetPoints, int i) {
+        if (amountOfPoints >= targetPoints && !hasAchievementReached(i)) {
+            applyAchievementMultiplier();
+            unlockAchievement(i);
+            achievementMessage = "Achievement unlocked!";
+            achievementUnlocked = true;
+        }
+    }
+
+    private boolean hasAchievementReached(int i) {
+        Preferences prefs = Gdx.app.getPreferences("MyGamePreferences");
+        return prefs.getBoolean("achievement_" + i, false);
+    }
+
+    private void unlockAchievement(int i) {
+        Preferences prefs = Gdx.app.getPreferences("MyGamePreferences");
+        prefs.putBoolean("achievement_" + i, true);
+        prefs.flush();
+    }
+
+    private void applyAchievementMultiplier() {
+        boostedIdle *= (1 + 0.05f);
+        clickValue *= (1 + 0.05f);
+        GameState.save(amountOfPoints, boostedIdle, clickValue);
+    }
+
+    private void renderAchievementPopUp() {
+        if (achievementUnlocked) {
+            // Display the achievement message for 3 seconds
+            achievementTimer += Gdx.graphics.getDeltaTime();
+
+            if (achievementTimer < 3) {
+                // Render the achievement message at the center of the screen
+                game.batch.begin();
+                game.font.getData().setScale(2f); // Adjust the scale as needed
+                game.font.draw(game.batch, achievementMessage, (float) Gdx.graphics.getWidth() / 2, Gdx.graphics.getHeight(), 0, Align.center, false);
+                game.batch.end();
+            } else {
+                // Reset achievement state and timer
+                achievementUnlocked = false;
+                achievementTimer = 0;
+            }
+        }
+    }
+
 
     @Override
     public boolean touchDown(float x, float y, int pointer, int button) {

@@ -1,4 +1,4 @@
-package com.mygdx.game;
+package com.mygdx.game.logic;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Preferences;
@@ -15,7 +15,7 @@ public class GameState {
     }
 
     // Dynamically save upgrade button to localstorage.
-    static void save(int buttonIndex) {
+    public static void save(int buttonIndex) {
         Preferences prefs = Gdx.app.getPreferences("MyGamePreferences");
         prefs.putBoolean("upgradeButton_" + buttonIndex, true);
         prefs.flush();

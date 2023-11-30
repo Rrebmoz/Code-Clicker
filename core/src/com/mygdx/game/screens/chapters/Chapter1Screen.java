@@ -1,6 +1,7 @@
-package com.mygdx.game;
+package com.mygdx.game.screens.chapters;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -9,23 +10,37 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.input.GestureDetector;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
+import com.mygdx.game.logic.GameState;
+import com.mygdx.game.logic.Main;
+import com.mygdx.game.screens.ClickerScreen;
 
-public class AchievementsScreen implements Screen, GestureDetector.GestureListener {
+public class Chapter1Screen implements Screen, GestureDetector.GestureListener {
     final Main game;
 
     // Scaling camera
     OrthographicCamera camera = new OrthographicCamera();
 
     // Achievement button variables
-    Rectangle achievementsScreenButtonBounds = new Rectangle((float) Gdx.graphics.getWidth() - (Gdx.graphics.getWidth() / 6.7f), Gdx.graphics.getHeight() / 2.75f, Gdx.graphics.getWidth() / 7.8f, Gdx.graphics.getHeight() / 3.65f); // Define your button's position and size
-    Color achievementsScreenButtonColor = Color.GOLD;
+    Rectangle achievementsScreenButtonBounds = new Rectangle((float) Gdx.graphics.getWidth() /50, Gdx.graphics.getHeight() / 2.75f, Gdx.graphics.getWidth() / 7.8f, Gdx.graphics.getHeight() / 3.65f); // Define your button's position and size
+    Color achievementsScreenButtonColor = Color.FOREST;
 
-    public AchievementsScreen(Main game) {
+    // Off-screen Points
+    float amountOfPoints = 0;
+    float timer = 0;
+    float boostedIdle = 0.125f;
+    float clickValue = 0.025f;
+
+    public Chapter1Screen(Main game) {
         this.game = game;
         camera.setToOrtho(false,800,480);
         // Check for swiping
         GestureDetector gestureDetector = new GestureDetector(this);
         Gdx.input.setInputProcessor(gestureDetector);
+
+        Preferences prefs = Gdx.app.getPreferences("MyGamePreferences");
+        amountOfPoints = prefs.getFloat("points", amountOfPoints);
+        boostedIdle = prefs.getFloat("boostedIdle", boostedIdle);
+        clickValue = prefs.getFloat("clickValue", clickValue);
     }
 
     @Override
@@ -36,6 +51,7 @@ public class AchievementsScreen implements Screen, GestureDetector.GestureListen
     @Override
     public void render(float delta) {
         handleClick();
+        update(Gdx.graphics.getDeltaTime());
         // Clear screen
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
@@ -48,7 +64,7 @@ public class AchievementsScreen implements Screen, GestureDetector.GestureListen
         // Render texts
         game.font.getData().setScale((float) Gdx.graphics.getHeight() / 235);
         game.batch.begin();
-        game.font.draw(game.batch, "--->", (float) Gdx.graphics.getWidth() - (Gdx.graphics.getWidth() / 8.5f), Gdx.graphics.getHeight() / 1.85f);
+        game.font.draw(game.batch, "<---", (float) Gdx.graphics.getWidth() / 21, Gdx.graphics.getHeight() / 1.85f);
         game.batch.end();
     }
 
@@ -87,6 +103,19 @@ public class AchievementsScreen implements Screen, GestureDetector.GestureListen
         }
     }
 
+    private void update(float delta) {
+        // Makes the timer go up faster.
+        timer += delta;
+
+        // Timer reset
+        if (timer >= 1.0f) {
+            amountOfPoints += 1 * boostedIdle;
+            timer -= 1.0f;
+            GameState.save(amountOfPoints, boostedIdle, clickValue); // Saving logic remains the same
+        }
+    }
+
+
     @Override
     public boolean touchDown(float x, float y, int pointer, int button) {
         return false;
@@ -104,7 +133,7 @@ public class AchievementsScreen implements Screen, GestureDetector.GestureListen
 
     @Override
     public boolean fling(float velocityX, float velocityY, int button) {
-        if (velocityX < -2000) {
+        if (velocityX > 2000) {
             game.setScreen(new ClickerScreen(game));
             return true;
         }

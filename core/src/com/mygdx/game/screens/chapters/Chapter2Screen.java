@@ -1,6 +1,7 @@
-package com.mygdx.game.chapters;
+package com.mygdx.game.screens.chapters;
 
 import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
@@ -9,10 +10,11 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.input.GestureDetector;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
-import com.mygdx.game.Main;
-import com.mygdx.game.ClickerScreen;
+import com.mygdx.game.logic.GameState;
+import com.mygdx.game.logic.Main;
+import com.mygdx.game.screens.ClickerScreen;
 
-public class Chapter3Screen implements Screen, GestureDetector.GestureListener {
+public class Chapter2Screen implements Screen, GestureDetector.GestureListener {
     final Main game;
 
     // Scaling camera
@@ -22,12 +24,23 @@ public class Chapter3Screen implements Screen, GestureDetector.GestureListener {
     Rectangle achievementsScreenButtonBounds = new Rectangle((float) Gdx.graphics.getWidth() /50, Gdx.graphics.getHeight() / 2.75f, Gdx.graphics.getWidth() / 7.8f, Gdx.graphics.getHeight() / 3.65f); // Define your button's position and size
     Color achievementsScreenButtonColor = Color.FOREST;
 
-    public Chapter3Screen(Main game) {
+    // Off-screen Points
+    float amountOfPoints = 0;
+    float timer = 0;
+    float boostedIdle = 0.125f;
+    float clickValue = 0.025f;
+
+    public Chapter2Screen(Main game) {
         this.game = game;
         camera.setToOrtho(false,800,480);
         // Check for swiping
         GestureDetector gestureDetector = new GestureDetector(this);
         Gdx.input.setInputProcessor(gestureDetector);
+
+        Preferences prefs = Gdx.app.getPreferences("MyGamePreferences");
+        amountOfPoints = prefs.getFloat("points", amountOfPoints);
+        boostedIdle = prefs.getFloat("boostedIdle", boostedIdle);
+        clickValue = prefs.getFloat("clickValue", clickValue);
     }
 
     @Override
@@ -38,6 +51,7 @@ public class Chapter3Screen implements Screen, GestureDetector.GestureListener {
     @Override
     public void render(float delta) {
         handleClick();
+        update(Gdx.graphics.getDeltaTime());
         // Clear screen
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
@@ -88,6 +102,19 @@ public class Chapter3Screen implements Screen, GestureDetector.GestureListener {
             }
         }
     }
+
+    private void update(float delta) {
+        // Makes the timer go up faster.
+        timer += delta;
+
+        // Timer reset
+        if (timer >= 1.0f) {
+            amountOfPoints += 1 * boostedIdle;
+            timer -= 1.0f;
+            GameState.save(amountOfPoints, boostedIdle, clickValue); // Saving logic remains the same
+        }
+    }
+
 
     @Override
     public boolean touchDown(float x, float y, int pointer, int button) {

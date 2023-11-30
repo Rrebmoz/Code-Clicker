@@ -1,5 +1,6 @@
 package com.mygdx.game;
 
+import com.mygdx.game.logic.Main;
 import org.robovm.apple.foundation.NSAutoreleasePool;
 import org.robovm.apple.uikit.UIApplication;
 
