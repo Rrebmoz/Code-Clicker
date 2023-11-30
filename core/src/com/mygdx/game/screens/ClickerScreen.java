@@ -18,6 +18,7 @@ import com.badlogic.gdx.utils.Align;
 import com.mygdx.game.screens.chapters.*;
 import com.mygdx.game.logic.GameState;
 import com.mygdx.game.logic.Main;
+import com.mygdx.game.screens.konami.UpScreen1;
 
 public class ClickerScreen implements Screen, GestureDetector.GestureListener {
     Main game;
@@ -324,7 +325,7 @@ public class ClickerScreen implements Screen, GestureDetector.GestureListener {
         return prefs.getBoolean("achievement_" + i, false);
     }
 
-    private void unlockAchievement(int i) {
+    public static void unlockAchievement(int i) {
         Preferences prefs = Gdx.app.getPreferences("MyGamePreferences");
         prefs.putBoolean("achievement_" + i, true);
         prefs.flush();
@@ -381,6 +382,7 @@ public class ClickerScreen implements Screen, GestureDetector.GestureListener {
         else if (velocityX < -2000 && upgradeButtonColors.get(4) == UPGRADE_COLOR) game.setScreen(new Chapter5Screen(game));
         else if (velocityX < -2000 && upgradeButtonColors.get(5) == UPGRADE_COLOR) game.setScreen(new Chapter6Screen(game));
         else if (velocityX < -2000 && upgradeButtonColors.get(6) == UPGRADE_COLOR) game.setScreen(new Chapter7Screen(game));
+        if (velocityY > 2000 && !hasAchievementReached(8)) game.setScreen(new UpScreen1(game));
         return false;
     }
 

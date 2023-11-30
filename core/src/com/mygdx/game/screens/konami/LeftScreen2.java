@@ -1,27 +1,21 @@
-package com.mygdx.game.screens;
+package com.mygdx.game.screens.konami;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Preferences;
 import com.badlogic.gdx.Screen;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.input.GestureDetector;
-import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.math.Vector2;
 import com.mygdx.game.logic.GameState;
 import com.mygdx.game.logic.Main;
+import com.mygdx.game.screens.ClickerScreen;
 
-public class TemplateScreen implements Screen, GestureDetector.GestureListener {
+public class LeftScreen2 implements Screen, GestureDetector.GestureListener {
     final Main game;
 
     // Scaling camera
     OrthographicCamera camera = new OrthographicCamera();
-
-    //button variables
-    Rectangle templateButtonBounds = new Rectangle(0,0, (float) Gdx.graphics.getWidth() / 3, (float) Gdx.graphics.getHeight() / 3);
-    Color templateButtonColor = Color.BLUE;
 
     // Off-screen Points
     float amountOfPoints = 0;
@@ -29,7 +23,7 @@ public class TemplateScreen implements Screen, GestureDetector.GestureListener {
     float boostedIdle = 0.125f;
     float clickValue = 0.025f;
 
-    public TemplateScreen(Main game) {
+    public LeftScreen2(Main game) {
         this.game = game;
         camera.setToOrtho(false,800,480);
         // Check for swiping
@@ -49,21 +43,14 @@ public class TemplateScreen implements Screen, GestureDetector.GestureListener {
 
     @Override
     public void render(float delta) {
-        handleClick();
         update(Gdx.graphics.getDeltaTime());
         // Clear screen
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
-        // Render shapes
-        game.shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        game.shapeRenderer.setColor(templateButtonColor);
-        game.shapeRenderer.rect(templateButtonBounds.x, templateButtonBounds.y, templateButtonBounds.width, templateButtonBounds.height);
-        game.shapeRenderer.end();
-
         // Render texts
         game.font.getData().setScale((float) Gdx.graphics.getHeight() / 235);
         game.batch.begin();
-        game.font.draw(game.batch, "--->", (float) Gdx.graphics.getWidth() - (Gdx.graphics.getWidth() / 8.5f), Gdx.graphics.getHeight() / 1.85f);
+        game.font.draw(game.batch, "???????", (float) Gdx.graphics.getWidth() / 2, (float) Gdx.graphics.getHeight() / 2);
         game.batch.end();
     }
 
@@ -89,17 +76,6 @@ public class TemplateScreen implements Screen, GestureDetector.GestureListener {
     @Override
     public void dispose() {
 
-    }
-    private void handleClick() {
-        if (Gdx.input.justTouched()) {
-            float touchX = Gdx.input.getX();
-            float touchY = Gdx.graphics.getHeight() - Gdx.input.getY();
-
-            // Check if the click is on the click button, reset button, or upgrade buttons
-            if (templateButtonBounds.contains(touchX, touchY)) {
-                game.setScreen(new ClickerScreen(game));
-            }
-        }
     }
 
     private void update(float delta) {
@@ -131,10 +107,10 @@ public class TemplateScreen implements Screen, GestureDetector.GestureListener {
 
     @Override
     public boolean fling(float velocityX, float velocityY, int button) {
-        if (velocityX < -2000) { // EXAMPLE SPEED
-            game.setScreen(new ClickerScreen(game)); // EXAMPLE SCREEN
-            return true;
-        }
+        if (velocityX < -2000) game.setScreen(new RightScreen2(game));
+        if (velocityY > 2000) game.setScreen(new ClickerScreen(game));
+        if (velocityY < -2000) game.setScreen(new ClickerScreen(game));
+        if (velocityX > 2000) game.setScreen(new ClickerScreen(game));
         return false;
     }
 
