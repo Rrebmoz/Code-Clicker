@@ -26,7 +26,6 @@ public class ClickerScreen implements Screen, GestureDetector.GestureListener {
     // Achievement unlocked message:
     boolean achievementUnlocked = false;
     float achievementTimer = 0;
-    String achievementMessage = "";
 
     // Scaling camera
     OrthographicCamera camera = new OrthographicCamera();
@@ -35,6 +34,8 @@ public class ClickerScreen implements Screen, GestureDetector.GestureListener {
     float amountOfPoints = 0;
     float timer = 0;
     float boostedIdle = 0.125f;
+    int clickCount = 0;
+    int CPS = 0;
 
     // Click button variables
     Rectangle clickButtonBounds = new Rectangle((float) Gdx.graphics.getWidth() / 6, (float) Gdx.graphics.getHeight() / 3,(float) Gdx.graphics.getWidth() / 4, (float) Gdx.graphics.getHeight() / 3);
@@ -114,6 +115,7 @@ public class ClickerScreen implements Screen, GestureDetector.GestureListener {
         game.font.draw(game.batch, "Points: " + String.format(Locale.US, "%.3f", amountOfPoints), 10, Gdx.graphics.getHeight() - heightChanger);
         game.font.draw(game.batch, "Idle points: " + String.format(Locale.US, "%.3f", boostedIdle) + "/s", 10, Gdx.graphics.getHeight() - heightChanger * 5);
         game.font.draw(game.batch, "Click value: " + String.format(Locale.US, "%.3f", clickValue) + "/click", 10, Gdx.graphics.getHeight() - heightChanger * 9);
+        game.font.draw(game.batch, "CPS: " + CPS + " & " + String.format(Locale.US, "%.2f", CPS * clickValue) + "/s", 10, Gdx.graphics.getHeight() - heightChanger * 13);
         game.font.draw(game.batch, "ACH", (float) Gdx.graphics.getWidth() / 21, Gdx.graphics.getHeight() / 1.85f);
         game.font.draw(game.batch, "RESET", resetButtonBounds.x + (float) Gdx.graphics.getWidth() / 128, resetButtonBounds.y + resetButtonBounds.height - 10);
         for (int i = 0; i < NUM_UPGRADE_BUTTONS; i++) {
@@ -191,6 +193,7 @@ public class ClickerScreen implements Screen, GestureDetector.GestureListener {
             // Check if the click is on the click button, reset button, or upgrade buttons
             if (clickButtonBounds.contains(touchX, touchY)) {
                 clickButtonPressed = true;
+                clickCount++;
             } else if (resetButtonBounds.contains(touchX, touchY)) {
                 // If the reset button is pressed, clear preferences and reset game state
                 resetGame();
@@ -279,6 +282,8 @@ public class ClickerScreen implements Screen, GestureDetector.GestureListener {
         // Timer reset
         if (timer >= 1.0f) {
             amountOfPoints += boostedIdle;
+            CPS = clickCount;
+            clickCount = 0;
             timer -= 1.0f;
             GameState.save(amountOfPoints, boostedIdle, clickValue);
         }
@@ -315,7 +320,6 @@ public class ClickerScreen implements Screen, GestureDetector.GestureListener {
         if (amountOfPoints >= targetPoints && !hasAchievementReached(i)) {
             applyAchievementMultiplier();
             unlockAchievement(i);
-            achievementMessage = "Achievement unlocked!";
             achievementUnlocked = true;
         }
     }
@@ -346,7 +350,7 @@ public class ClickerScreen implements Screen, GestureDetector.GestureListener {
                 // Render the achievement message at the center of the screen
                 game.batch.begin();
                 game.font.getData().setScale(2f); // Adjust the scale as needed
-                game.font.draw(game.batch, achievementMessage, (float) Gdx.graphics.getWidth() / 2, Gdx.graphics.getHeight(), 0, Align.center, false);
+                game.font.draw(game.batch, "Achievement unlocked!", (float) Gdx.graphics.getWidth() / 2, Gdx.graphics.getHeight(), 0, Align.center, false);
                 game.batch.end();
             } else {
                 // Reset achievement state and timer
